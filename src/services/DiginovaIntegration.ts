@@ -42,7 +42,7 @@ class DiginovaIntegration {
     /**
      * Diginova Telemetri Motorunu Başlatır (Netlify uyumlu Cloud Sync)
      */
-    public connect(endpoint: string = '') {
+    public connect() {
         if (this.isRunning) return;
         this.isRunning = true;
         console.log(`[Diginova] Gerçek zamanlı davranışsal telemetri motoru başlatıldı.`);

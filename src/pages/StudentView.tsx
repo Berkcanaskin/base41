@@ -60,10 +60,15 @@ export default function StudentView() {
   useEffect(() => {
     const loadModels = async () => {
       console.log("FaceAPI Modelleri Yükleniyor...");
-      await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
-      await faceapi.nets.faceLandmark68Net.loadFromUri('/models');
-      await faceapi.nets.faceRecognitionNet.loadFromUri('/models');
-      setModelsLoaded(true);
+      try {
+        await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
+        await faceapi.nets.faceLandmark68Net.loadFromUri('/models');
+        await faceapi.nets.faceRecognitionNet.loadFromUri('/models');
+        setModelsLoaded(true);
+      } catch (e: any) {
+        console.error("FaceAPI Modelleri Yüklenirken Hata Oluştu:", e);
+        alert("FaceAPI modelleri yüklenemedi! Lütfen '/models' klasörünün Netlify sitenizde doğru şekilde yayınlandığından emin olun. Hata: " + e.message);
+      }
     };
     loadModels();
   }, []);
@@ -192,9 +197,9 @@ export default function StudentView() {
           alert("Sizi tanıyamadım. Sistemi kandırmaya çalışıyorsanız, NovaVision'dan kaçamazsınız! :)");
         }
       }
-    } catch (err) {
-      console.error(err);
-      alert("Kamera izni verilmedi.");
+    } catch (err: any) {
+      console.error("Giriş Hatası:", err);
+      alert("Giriş işlemi sırasında bir hata oluştu: " + (err.message || err) + "\n\nLütfen Firebase console üzerinden Firestore Kurallarını (Rules) veya kamera izinlerinizi kontrol edin!");
     }
     setIsLoggingIn(false);
   };
@@ -274,7 +279,7 @@ export default function StudentView() {
                   let responseText = '';
 
                   // BULLETPROOF PARSER V3: Bozuk JSON'ları (kaçış karakteri unutulmuş) onarır
-                  const deepParse = (val) => {
+                  const deepParse = (val: any) => {
                     if (typeof val === 'string') {
                       try {
                         // Puq.ai bazen \n karakterlerini escape etmeden yolluyor, JSON.parse çöküyor!

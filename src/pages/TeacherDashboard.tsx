@@ -25,13 +25,26 @@ export default function TeacherDashboard() {
     };
     loadModels();
 
-    const unsubStudents = onSnapshot(collection(db, "students"), (snapshot) => {
-      setStudents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    });
+    const unsubStudents = onSnapshot(
+      collection(db, "students"), 
+      (snapshot) => {
+        setStudents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      },
+      (error) => {
+        console.error("Firestore Students Subscription Error:", error);
+        alert("Veritabanından öğrenci listesi alınamadı: " + error.message + "\n\nLütfen Firebase console üzerinden Firestore Kurallarını (Rules) kontrol edin! Okuma (read) izninin açık olduğundan emin olun.");
+      }
+    );
 
-    const unsubSessions = onSnapshot(collection(db, "sessions"), (snapshot) => {
-      setActiveSessions(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    });
+    const unsubSessions = onSnapshot(
+      collection(db, "sessions"), 
+      (snapshot) => {
+        setActiveSessions(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      },
+      (error) => {
+        console.error("Firestore Sessions Subscription Error:", error);
+      }
+    );
 
     return () => {
       unsubStudents();
@@ -64,27 +77,33 @@ export default function TeacherDashboard() {
     if (!videoRef.current || !modelsLoaded) return;
     
     setIsScanning(true);
-    const detection = await faceapi.detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
-                                   .withFaceLandmarks()
-                                   .withFaceDescriptor();
-    
-    if (!detection) {
+    try {
+      const detection = await faceapi.detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
+                                     .withFaceLandmarks()
+                                     .withFaceDescriptor();
+      
+      if (!detection) {
+        setIsScanning(false);
+        return alert('Yüz tespit edilemedi! Kameraya düz bakın.');
+      }
+
+      const descriptorArray = Array.from(detection.descriptor);
+
+      // Save to Firebase
+      await setDoc(doc(collection(db, "students")), {
+        name: newStudentName,
+        descriptor: descriptorArray
+      });
+
       setIsScanning(false);
-      return alert('Yüz tespit edilemedi! Kameraya düz bakın.');
+      setNewStudentName('');
+      closeAddModal();
+      alert(`${newStudentName} başarıyla sisteme yüzüyle kaydedildi!`);
+    } catch (e: any) {
+      console.error("Öğrenci Kayıt Hatası:", e);
+      setIsScanning(false);
+      alert("Öğrenci kaydedilirken hata oluştu: " + (e.message || e) + "\n\nLütfen Firebase console üzerinden Firestore Kurallarını (Rules) kontrol edin! Yazma (write) izninin açık olduğundan emin olun.");
     }
-
-    const descriptorArray = Array.from(detection.descriptor);
-
-    // Save to Firebase
-    await setDoc(doc(collection(db, "students")), {
-      name: newStudentName,
-      descriptor: descriptorArray
-    });
-
-    setIsScanning(false);
-    setNewStudentName('');
-    closeAddModal();
-    alert(`${newStudentName} başarıyla sisteme yüzüyle kaydedildi!`);
   };
 
   const triggerIntervention = async (studentName: string) => {
