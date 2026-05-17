@@ -150,7 +150,7 @@ export default function TeacherDashboard() {
           <div className="glass-panel" style={{ padding: '1.5rem', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
             <div style={{ color: '#ef4444', fontSize: '0.875rem', marginBottom: '0.5rem', fontWeight: 600 }}>Riskli Öğrenciler</div>
             <div style={{ fontSize: '2rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '12px', color: '#ef4444' }}>
-              <AlertTriangle size={28} /> {activeSessions.filter(s => s.online && s.risk === 'critical').length}
+              <AlertTriangle size={28} /> {activeSessions.filter(s => (s.online && s.risk === 'critical') || (s.isFinished && s.finalReport && s.finalReport.includes('Yüksek'))).length}
             </div>
           </div>
         </div>
@@ -209,15 +209,18 @@ export default function TeacherDashboard() {
           {/* Çevrimdışı (Pasif) Öğrenciler ve Raporu Bitenler */}
           {students.filter(stu => !activeSessions.find(s => s.online && s.name === stu.name)).map(stu => {
             const session = activeSessions.find(s => s.name === stu.name);
+            const isHighRisk = session?.finalReport && session.finalReport.includes('Yüksek');
+            const themeColor = isHighRisk ? '#ef4444' : '#10b981';
+            
             return (
-            <div key={stu.id} className="glass-panel" style={{ padding: '1.5rem', opacity: session?.isFinished ? 1 : 0.5 }}>
+            <div key={stu.id} className="glass-panel" style={{ padding: '1.5rem', opacity: session?.isFinished ? 1 : 0.5, ...(isHighRisk ? { border: '1px solid rgba(239, 68, 68, 0.3)' } : {}) }}>
                <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', color: session?.isFinished ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
-                 {stu.name} <span style={{fontSize:'0.8rem', color: session?.isFinished ? '#10b981' : 'gray'}}>{session?.isFinished ? '✓ Analiz Tamamlandı' : '○ Offline'}</span>
+                 {stu.name} <span style={{fontSize:'0.8rem', color: session?.isFinished ? themeColor : 'gray'}}>{session?.isFinished ? '✓ Analiz Tamamlandı' : '○ Offline'}</span>
                </h3>
                
                {session?.isFinished && session.finalReport ? (
-                 <div style={{ padding: '12px', color: 'var(--text-primary)', fontSize: '0.875rem', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '8px', whiteSpace: 'pre-wrap' }}>
-                   <strong style={{color: '#10b981', display: 'block', marginBottom: '8px'}}>Otonom Teşhis Raporu:</strong>
+                 <div style={{ padding: '12px', color: 'var(--text-primary)', fontSize: '0.875rem', background: `rgba(${isHighRisk ? '239, 68, 68' : '16, 185, 129'}, 0.1)`, border: `1px solid rgba(${isHighRisk ? '239, 68, 68' : '16, 185, 129'}, 0.3)`, borderRadius: '8px', whiteSpace: 'pre-wrap' }}>
+                   <strong style={{color: themeColor, display: 'block', marginBottom: '8px'}}>Otonom Teşhis Raporu:</strong>
                    {session.finalReport}
                  </div>
                ) : (
